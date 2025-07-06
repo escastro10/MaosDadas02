@@ -1,22 +1,36 @@
+# D:\Projetos\MaosDadas\backend-fieb-main\docker-compose.yml
+
+version: '3.8'
+
 services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
     ports:
       - "27017:27017"
-    command: [ "mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0" ]
-    networks:
-      - my-network
     volumes:
-      - mongodb_data:/data/db
-    restart: always
-  # Supondo que o serviço "app" seja a aplicação que você está desenvolvendo,
-  # e você esteja usando um Dockerfile para construir a imagem, faça a configuração a seguir
+      - mongo_data:/data/db
+    # Adiciona a entrada para rodar como replica set e bind_ip_all
+    command: mongod --replSet rs0 --bind_ip_all
+    # Certifique-se de que o container não reinicie até o replica set ser iniciado
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand({ping: 1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Adicione um delay para garantir que o mongod esteja pronto antes de iniciar o init script
+    # depends_on:
+    #   - mongo-init-replica # Removido, pois vamos usar um script de inicialização direto
+    #   healthcheck:
+    #     condition: service_healthy # Remove isso se você não usar o healthcheck
 
-networks:
-  my-network:
-    driver: bridge
-
+  mongo-init-replica:
+    image: mongo:latest
+    container_name: mongo-init-replica
+    # Executa um script para iniciar o replica set
+    entrypoint: [ "bash", "-c", "sleep 10 && mongo --host mongodb:27017 --eval 'rs.initiate({ _id: \"rs0\", members: [{ _id: 0, host: \"mongodb:27017\" }]})'" ]
+    depends_on:
+      mongodb:
+        condition: service_healthy # Garante que o mongodb esteja saudável antes de inicializar o replica set
 volumes:
-  mongodb_data:
-    driver: local
+  mongo_data:

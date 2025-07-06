@@ -1,19 +1,23 @@
+// D:\Projetos\MaosDadas\backend-fieb-main\src\seeds\areas.ts
+
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Encapsule toda a lógica do seed em uma função exportada
+export async function seedAreas(prisma: PrismaClient) { // <-- MUDANÇA AQUI: `export async function` e recebendo `prisma`
+    console.log('Iniciando o seeding de Áreas...');
 
-async function main() {
     const areas = [
         { name: 'Conselhos Temáticos', iconName: 'PiChalkboardTeacher' },
         { name: 'Impactos Econômicos', iconName: 'GiReceiveMoney' },
-
+        // Adicione outras áreas se desejar
+        { name: 'Saúde e Segurança do Trabalho', iconName: 'GiHealthCapsule' } // Exemplo de área que estava sendo filtrada em categories.ts
     ];
 
     const periodIds = await prisma.period.findMany({
         select: {
             id: true,
         }
-    })
+    });
 
     function createSlug(name: string): string {
         return name
@@ -27,7 +31,6 @@ async function main() {
             .replace(/-+$/, ''); // Remove hifens no final
     }
 
-
     const data = periodIds.flatMap(periodId =>
         areas.map(area => ({
             name: area.name,
@@ -37,12 +40,15 @@ async function main() {
         }))
     );
 
-
     await prisma.area.createMany({
-        data
+        data,
+        // skipDuplicates: true, // Adicionado para evitar erros se a área já existir
     });
+    console.log('Seeding de Áreas concluído.'); // Adicione um log
 }
 
+// REMOVA O BLOCO ABAIXO INTEIRO, SE ELE EXISTIR NO SEU ARQUIVO!
+/*
 main()
     .then(async () => {
         await prisma.$disconnect();
@@ -52,3 +58,4 @@ main()
         await prisma.$disconnect();
         process.exit(1);
     });
+*/

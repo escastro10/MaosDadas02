@@ -131,10 +131,12 @@ model Message {
 model Period {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   year      Int
+  isActive  Boolean @default(false)
   open      Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   areas     Area[]
+  
 
   @@map("periods")
 }
