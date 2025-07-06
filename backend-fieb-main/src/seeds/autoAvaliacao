@@ -1,0 +1,17 @@
+import mongoose from 'mongoose';
+
+const RespostaSchema = new mongoose.Schema({
+  indicadorId: String,
+  valor: Number,
+  comentario: String,
+});
+
+const AutoavaliacaoSchema = new mongoose.Schema({
+  areaId: String,
+  periodo: String,
+  respostas: [RespostaSchema],
+  media: Number,
+  criadoEm: { type: Date, default: Date.now },
+});
+
+export default mongoose.model('Autoavaliacao', AutoavaliacaoSchema);

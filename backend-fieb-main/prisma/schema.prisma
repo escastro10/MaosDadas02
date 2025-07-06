@@ -1,0 +1,264 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  email     String    @unique
+  firstName String
+  lastName  String
+  isAdmin   Boolean   @default(false)
+  photo     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+  rules     Rule[]
+
+  @@map("users")
+}
+
+model RuleItem {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId String   @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+  rule       Rule     @relation(fields: [ruleId], references: [id])
+  ruleId     String   @db.ObjectId
+
+  @@map("ruleItem")
+}
+
+model Rule {
+  id     String     @id @default(auto()) @map("_id") @db.ObjectId
+  user   User       @relation(fields: [userId], references: [id])
+  userId String     @db.ObjectId
+  items  RuleItem[]
+
+  @@map("rules")
+}
+
+model Area {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  slug       String
+  iconName   String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  period     Period     @relation(fields: [periodId], references: [id])
+  categories Category[]
+  periodId   String     @db.ObjectId
+
+  @@map("areas")
+}
+
+model Category {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  area        Area        @relation(fields: [areaId], references: [id])
+  createdAt   DateTime    @default(now())
+  codes       CodeItem[]
+  updatedAt   DateTime    @updatedAt
+  areaId      String      @db.ObjectId
+  indicadores Indicador[]
+  RuleItem    RuleItem[]
+
+  @@map("categories")
+}
+
+model Indicador {
+  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
+  pergunta            String
+  value               Float               @default(0)
+  type                String // Qualitativo, Quantitativo, Percentual, Booleano, Turnover Médio / Acumulado
+  qualitativo         String?
+  question            String?
+  isHide              Boolean             @default(false)
+  draft               Boolean             @default(true)
+  isPriority          Boolean             @default(false)
+  hasUpload           Boolean             @default(false)
+  operation           Boolean             @default(false)
+  category            Category            @relation(fields: [categoryId], references: [id])
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  categoryId          String              @db.ObjectId
+  analises_criticas   AnaliseCritica[]
+  autoAvaliacao       AutoAvaliacaoArea?  @relation(fields: [autoAvaliacaoAreaId], references: [id])
+  autoAvaliacaoAreaId String?             @db.ObjectId
+  turnoverMedio       TurnoverMedio[]
+  turnoverAcumulado   TurnoverAcumulado[]
+  operations          Operation[]
+  OperationItem       OperationItem[]
+  respostas           Resposta[]
+
+
+  @@map("indicadores")
+}
+
+model AnaliseCritica {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  indicador   Indicador @relation(fields: [indicadorId], references: [id])
+  indicadorId String    @db.ObjectId
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+
+  @@map("analises_criticas")
+}
+
+model Message {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  message          String
+  analisecritica   AnaliseCritica @relation(fields: [analisecriticaId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  analisecriticaId String         @db.ObjectId
+  user             User           @relation(fields: [userId], references: [id])
+  userId           String         @db.ObjectId
+
+  @@map("messages")
+}
+
+model Period {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  year      Int
+  open      Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  areas     Area[]
+
+  @@map("periods")
+}
+
+model AVPeriod {
+  id        String              @id @default(auto()) @map("_id") @db.ObjectId
+  year      Int
+  open      Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  av_areas  AutoAvaliacaoArea[]
+
+  @@map("avperiods")
+}
+
+model CodeItem {
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
+  code       IndiceRemissivo @relation(fields: [codeId], references: [id])
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  codeId     String          @db.ObjectId
+  categories Category?       @relation(fields: [categoryId], references: [id])
+  categoryId String?         @db.ObjectId
+
+  @@map("codes")
+}
+
+model IndiceRemissivo {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  type      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  codes     CodeItem[]
+
+  @@map("indicesRemissivos")
+}
+
+model AutoAvaliacaoArea {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  slug      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  period    AVPeriod    @relation(fields: [periodId], references: [id])
+  Indicador Indicador[]
+  periodId  String      @db.ObjectId
+  autoavaliacoes Autoavaliacao[]
+
+  @@map("autoavaliacao_areas")
+}
+
+model TurnoverMedio {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  indicador    Indicador @relation(fields: [indicadorId], references: [id])
+  indicadorId  String    @db.ObjectId
+  admitidos    String    @db.ObjectId
+  desligados   String    @db.ObjectId
+  efetivoMedio String    @db.ObjectId
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("turnover_medio")
+}
+
+model TurnoverAcumulado {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  indicador    Indicador @relation(fields: [indicadorId], references: [id])
+  indicadorId  String    @db.ObjectId
+  admitidos    String    @db.ObjectId
+  desligados   String    @db.ObjectId
+  efetivoMedio String    @db.ObjectId
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("turnover_acumulado")
+}
+
+model Operation {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  type        String
+  indicador   Indicador       @relation(fields: [indicadorId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  indicadorId String          @db.ObjectId
+  campos      OperationItem[]
+
+  @@map("operations")
+}
+
+model OperationItem {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  operation   Operation @relation(fields: [operationId], references: [id])
+  operationId String    @db.ObjectId
+  indicador   Indicador @relation(fields: [indicadorId], references: [id])
+  indicadorId String    @db.ObjectId
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("operationItems")
+}
+
+model Autoavaliacao {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  areaId     String     @db.ObjectId
+  periodo    String
+  media      Float
+  criadoEm   DateTime   @default(now())
+  respostas  Resposta[]
+
+  area       AutoAvaliacaoArea @relation(fields: [areaId], references: [id])
+
+  @@map("autoavaliacoes")
+}
+
+model Resposta {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  autoavaliacaoId String   @db.ObjectId
+  indicadorId     String   @db.ObjectId
+  valor           Int
+  comentario      String?
+
+  autoavaliacao   Autoavaliacao @relation(fields: [autoavaliacaoId], references: [id])
+  indicador       Indicador     @relation(fields: [indicadorId], references: [id])
+
+  @@map("respostas")
+}

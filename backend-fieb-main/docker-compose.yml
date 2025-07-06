@@ -1,0 +1,22 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0" ]
+    networks:
+      - my-network
+    volumes:
+      - mongodb_data:/data/db
+    restart: always
+  # Supondo que o serviço "app" seja a aplicação que você está desenvolvendo,
+  # e você esteja usando um Dockerfile para construir a imagem, faça a configuração a seguir
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
